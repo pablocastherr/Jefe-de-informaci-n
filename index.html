@@ -38,7 +38,7 @@
                     
                     <button id="generateBtn" onclick="processText()" class="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 px-6 rounded-xl transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-900/40">
                         <span id="btnText">Generar Nota y Curaduría</span>
-                        <div id="loadingSpinner" class="hidden animate-spin rounded-full h-5 class w-5 border-b-2 border-white"></div>
+                        <div id="loadingSpinner" class="hidden animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                     </button>
                 </div>
             </div>
@@ -104,6 +104,13 @@
     </div>
 
     <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem('gemini_api_key');
+            if (savedKey) {
+                document.getElementById('apiKeyInput').value = savedKey;
+            }
+        });
+
         function toggleApiKey() {
             const input = document.getElementById('apiKeyInput');
             input.type = input.type === 'password' ? 'text' : 'password';
@@ -128,6 +135,8 @@
                 alert('Por favor ingresa tu API Key de Google AI Studio en la parte superior.');
                 return;
             }
+
+            localStorage.setItem('gemini_api_key', apiKey);
 
             if (!rawText) {
                 alert('Por favor ingresa o pega un texto para procesar.');
