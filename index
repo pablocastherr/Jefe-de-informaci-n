@@ -1,0 +1,282 @@
+<!-- Header / Navbar -->
+<header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div class="flex items-center space-x-3">
+            <div class="bg-cyan-600 p-2.5 rounded-lg shadow-lg shadow-cyan-900/40">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-white">Mesa de Redacción Q. Roo</h1>
+                <p class="text-xs text-slate-400">Sistema Automatizado de Curaduría y Estándares Periodísticos</p>
+            </div>
+        </div>
+        
+        <!-- API Key Input Control -->
+        <div class="flex items-center space-x-2 bg-slate-950/60 border border-slate-800 px-3 py-1.5 rounded-lg">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">API Key:</span>
+            <input type="password" id="apiKeyInput" placeholder="Pega tu clave de Google AI Studio" 
+                class="bg-transparent text-sm text-slate-200 focus:outline-none w-56 placeholder:text-slate-600">
+            <button onclick="toggleApiKeyVisibility()" class="text-slate-500 hover:text-slate-300 text-xs">👁️</button>
+        </div>
+    </div>
+</header>
+
+<!-- Main Workspace -->
+<main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 w-full flex-grow">
+    
+    <!-- Left Column: Input and Rules -->
+    <section class="lg:col-span-5 flex flex-col space-y-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl flex flex-col flex-grow">
+            <div class="flex justify-between items-center mb-3">
+                <label for="rawTextInput" class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
+                    Texto Bruto / Nota de Facebook
+                </label>
+                <button onclick="clearInput()" class="text-xs text-slate-400 hover:text-slate-200 underline">Limpiar</button>
+            </div>
+            <textarea id="rawTextInput" rows="12" 
+                placeholder="Pega aquí el reporte ciudadano, comunicado oficial o texto suelto de Facebook que deseas curar..."
+                class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3.5 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition resize-y"></textarea>
+            
+            <div class="mt-4">
+                <button id="generateBtn" onclick="processNews()" 
+                    class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-medium py-3 px-4 rounded-lg shadow-lg shadow-cyan-900/30 transition duration-200 flex items-center justify-center space-x-2 cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    <span id="btnText">Generar Nota y Curaduría</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Active Editorial Standards Box -->
+        <div class="bg-slate-900/50 border border-slate-800/80 rounded-xl p-4 text-xs text-slate-400 space-y-2">
+            <h4 class="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">Reglas Activas en el Sistema:</h4>
+            <ul class="list-disc list-inside space-y-1 text-slate-400">
+                <li><strong class="text-slate-300">Cero gerundios:</strong> No se permiten terminaciones en -ando / -iendo.</li>
+                <li><strong class="text-slate-300">Cero "tras":</strong> Prohibido como conector gramatical.</li>
+                <li><strong class="text-slate-300">Neutralidad institucional:</strong> Sin elogios a corporaciones.</li>
+                <li><strong class="text-slate-300">Pirámide invertida:</strong> Estructura web de 3-4 párrafos.</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Right Column: Outputs -->
+    <section class="lg:col-span-7 flex flex-col space-y-6">
+        
+        <!-- Loading State -->
+        <div id="loadingState" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-12 text-center flex flex-col items-center justify-center flex-grow">
+            <div class="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p class="text-slate-300 font-medium">Aplicando filtros editoriales y redactando piezas...</p>
+            <p class="text-xs text-slate-500 mt-1">Verificando neutralidad y estructura de Quintana Roo</p>
+        </div>
+
+        <!-- Empty / Initial State -->
+        <div id="emptyState" class="bg-slate-900/60 border border-slate-800/80 rounded-xl p-12 text-center flex flex-col items-center justify-center flex-grow">
+            <svg class="w-12 h-12 text-slate-700 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <h3 class="text-slate-300 font-medium">Esperando insumo informativo</h3>
+            <p class="text-xs text-slate-500 mt-1 max-w-sm">Pega un texto de Facebook a la izquierda y presiona el botón para generar automáticamente los formatos de la redacción.</p>
+        </div>
+
+        <!-- Results Container -->
+        <div id="resultsContainer" class="hidden flex flex-col space-y-6">
+            
+            <!-- 1. Titulares -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl relative group">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+                        <span>📌</span> Titulares Sugeridos (3-4 Opciones)
+                    </h3>
+                    <button onclick="copySection('titularesOutput')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded transition">Copiar</button>
+                </div>
+                <div id="titularesOutput" class="text-sm text-slate-200 whitespace-pre-line leading-relaxed"></div>
+            </div>
+
+            <!-- 2. Cintilla / GC -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl relative group">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+                        <span>📺</span> Cintilla Inferior / GC (Súper Corto)
+                    </h3>
+                    <button onclick="copySection('cintillaOutput')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded transition">Copiar</button>
+                </div>
+                <div id="cintillaOutput" class="text-sm text-slate-200 font-medium bg-slate-950 p-3 rounded-lg border border-slate-800/60"></div>
+            </div>
+
+            <!-- 3. Texto Base Web -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl relative group">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+                        <span>🌐</span> Texto Base para Web / Noticiero
+                    </h3>
+                    <button onclick="copySection('webOutput')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded transition">Copiar</button>
+                </div>
+                <div id="webOutput" class="text-sm text-slate-200 space-y-3 leading-relaxed"></div>
+            </div>
+
+            <!-- 4. Guion En Vivo -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl relative group">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+                        <span>🎙️</span> Guion para Enlace en Vivo (Campo / Estudio)
+                    </h3>
+                    <button onclick="copySection('liveOutput')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded transition">Copiar</button>
+                </div>
+                <div id="liveOutput" class="text-sm text-slate-200 whitespace-pre-line leading-relaxed bg-slate-950 p-4 rounded-lg border border-slate-800/60 font-mono text-xs sm:text-sm"></div>
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+<!-- Footer -->
+<footer class="border-t border-slate-900 py-4 text-center text-xs text-slate-600">
+    Mesa de Redacción Quintana Roo &copy; 2026 &bull; Herramienta exclusiva de curaduría periodística
+</footer>
+
+<!-- JavaScript Logic -->
+<script>
+    // Toggle API Key view
+    function toggleApiKeyVisibility() {
+        const input = document.getElementById('apiKeyInput');
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    function clearInput() {
+        document.getElementById('rawTextInput').value = '';
+    }
+
+    function copySection(elementId) {
+        const text = document.getElementById(elementId).innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('¡Sección copiada al portapapeles!');
+        });
+    }
+
+    const SYSTEM_PROMPT = `Eres el Jefe de Información y Editor de Noticias en la mesa de redacción de Quintana Roo. Tu función es transformar notas, reportes de campo, comunicados o textos extraídos de Facebook en piezas informativas profesionales, redactadas bajo estrictos estándares periodísticos para medios digitales y televisión.
+
+
+ESTÁNDARES EDITORIALES Y REGLAS ESTRICTAS DE REDACCIÓN:
+
+Cero Gerundios: Prohibido usar verbos terminados en "-ando" o "-iendo" (por ejemplo, sustituir "realizando trabajos" por "realiza trabajos" o reestructurar).
+
+Prohibición de la palabra "tras": Erradicada como conector gramatical. Utiliza alternativas como "luego de", "después de", "ante", o reestructura la oración con sujeto y verbo directo.
+
+Cero Encomio Institucional: Mantén una cobertura estrictamente objetiva de corporaciones y dependencias (Bomberos, Tránsito, Policía, Ayuntamientos). Reporta los hechos y la función pública sin adjetivos calificativos de elogio o propaganda.
+
+Neutralidad y Descriptores Generales: Omite nombres propios no esenciales o imprecisos cuando la nota requiera síntesis directa. Utiliza descriptores impersonales (ej. "elementos de la corporación", "una conductora", "un sujeto").
+
+Voz Activa y Verbos Fuertes: Da prioridad a verbos en presente o pretérito perfecto para aportar inmediatez y dinamismo (ej. resguardan, detienen, reportan, colapsa, desvían).
+
+Estructura y Estilo Directo: Entradas sin rodeos ni introducciones superfluas.
+
+FORMATO DE RESPUESTA OBLIGATORIO (Usa exactamente estas etiquetas o separadores para que la aplicación web pueda seccionarlo):
+
+TITULARES
+
+[3 a 4 opciones de encabezados directos, informativos y atractivos]
+
+CINTILLA
+
+[Frase síntesis de 4 a 6 palabras para GC]
+
+WEB
+
+[Redacción concisa de 3 a 4 párrafos estructurados en pirámide invertida]
+
+GUION
+
+[Guion corto para locución o campo, con saludo y cierre de pase a estudio]`;
+
+    async function processNews() {
+        const apiKey = document.getElementById('apiKeyInput').value.trim();
+        const rawText = document.getElementById('rawTextInput').value.trim();
+
+        if (!apiKey) {
+            alert('Por favor, ingresa tu API Key de Google Gemini en la parte superior derecha.');
+            return;
+        }
+
+        if (!rawText) {
+            alert('Por favor, ingresa o pega un texto de Facebook para procesar.');
+            return;
+        }
+
+        // UI states
+        document.getElementById('emptyState').classList.add('hidden');
+        document.getElementById('resultsContainer').classList.add('hidden');
+        document.getElementById('loadingState').classList.remove('hidden');
+        document.getElementById('generateBtn').disabled = true;
+        document.getElementById('btnText').innerText = 'Procesando notas...';
+
+        // Gemini API call using gemini-2.5-flash or gemini-2.0-flash
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+        const requestBody = {
+            contents: [
+                {
+                    role: "user",
+                    parts: [
+                        { text: SYSTEM_PROMPT + "\n\nTEXTO BRUTO A CURAR Y REDACTAR:\n" + rawText }
+                    ]
+                }
+            ]
+        };
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error?.message || 'Error al comunicarse con la API de Gemini.');
+            }
+
+            const data = await response.json();
+            const outputText = data.candidates[0].content.parts[0].text;
+
+            parseAndDisplayOutput(outputText);
+
+        } catch (error) {
+            alert('Ocurrió un error: ' + error.message);
+            document.getElementById('emptyState').classList.remove('hidden');
+        } finally {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('generateBtn').disabled = false;
+            document.getElementById('btnText').innerText = 'Generar Nota y Curaduría';
+        }
+    }
+
+    function parseAndDisplayOutput(text) {
+        // Simple parsing based on markers
+        const getSection = (startMarker, endMarker) => {
+            const startIndex = text.indexOf(startMarker);
+            if (startIndex === -1) return '';
+            const contentStart = startIndex + startMarker.length;
+            let endIndex = endMarker ? text.indexOf(endMarker, contentStart) : text.length;
+            if (endIndex === -1) endIndex = text.length;
+            return text.substring(contentStart, endIndex).trim();
+        };
+
+        const titulares = getSection('### TITULARES', '### CINTILLA');
+        const cintilla = getSection('### CINTILLA', '### WEB');
+        const web = getSection('### WEB', '### GUION');
+        const guion = getSection('### GUION', null);
+
+        document.getElementById('titularesOutput').innerText = titulares || text;
+        document.getElementById('cintillaOutput').innerText = cintilla || 'Sin cintilla generada';
+        document.getElementById('webOutput').innerText = web || '';
+        document.getElementById('liveOutput').innerText = guion || '';
+
+        document.getElementById('resultsContainer').classList.remove('hidden');
+    }
+</script>
